@@ -38,11 +38,4 @@ func main() {
 		log.Printf("could not Publish Playing State: %v", err)
 	}
 	fmt.Println("Pause message sent!")
-
-	// // wait for ctrl+c
-	// signalChan := make(chan os.Signal, 1)
-	// signal.Notify(signalChan, os.Interrupt)
-	// <-signalChan
-	//
-	// fmt.Println("\nRabbitMQ connection closed...")
 }
