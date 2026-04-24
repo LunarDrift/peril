@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
-	"os/signal"
 
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/gamelogic"
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/pubsub"
@@ -25,7 +23,7 @@ func main() {
 
 	username, err := gamelogic.ClientWelcome()
 	if err != nil {
-		log.Fatalf("Could not get username: %w", err)
+		log.Fatalf("Could not get username: %v", err)
 	}
 
 	_, queue, err := pubsub.DeclareAndBind(
@@ -36,13 +34,46 @@ func main() {
 		pubsub.SimpleQueueTransient,
 	)
 	if err != nil {
-		log.Fatalf("could not subscribe to pause: %w", err)
+		log.Fatalf("could not subscribe to pause: %v", err)
 	}
 	fmt.Printf("Queue %v declared and bound!\n", queue.Name)
 
-	// wait for ctrl+c
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt)
-	<-signalChan
-	fmt.Println("\nRabbitMQ connection closed...")
+	gameState := gamelogic.NewGameState(username)
+
+	for {
+		words := gamelogic.GetInput()
+		if len(words) == 0 {
+			continue
+		}
+		switch words[0] {
+		case "spawn":
+			err := gameState.CommandSpawn(words)
+			if err != nil {
+				log.Printf("could not spawn unit: %v", err)
+			}
+
+		case "move":
+			move, err := gameState.CommandMove(words)
+			if err != nil {
+				log.Printf("could not move unit: %v", err)
+			}
+			fmt.Println("Move successful:", move)
+
+		case "status":
+			gameState.CommandStatus()
+
+		case "help":
+			gamelogic.PrintClientHelp()
+
+		case "spam":
+			fmt.Println("Spamming not allowed yet!")
+
+		case "quit":
+			gamelogic.PrintQuit()
+			return
+
+		default:
+			fmt.Println("unknown command")
+		}
+	}
 }
